@@ -1,0 +1,5 @@
+feedparser
+pandas
+google-cloud-storage
+google-genai
+python-dotenv

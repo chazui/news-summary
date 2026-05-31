@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mynews</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia, serif;
+      background: #f9f7f4;
+      color: #1a1a1a;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    header { border-bottom: 2px solid #1a1a1a; padding-bottom: 0.75rem; margin-bottom: 2rem; }
+    header h1 { font-size: 2rem; letter-spacing: -0.5px; }
+    header p { font-size: 0.85rem; color: #666; margin-top: 0.25rem; }
+    section { margin-bottom: 2.5rem; }
+    h2.section-title {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 1rem;
+    }
+    #report-body {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 1.25rem 1.5rem;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+    .breadth-badge {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+      background: #eee;
+      color: #555;
+    }
+    .breadth-global    { background: #d1e8ff; color: #1a4a7a; }
+    .breadth-national  { background: #d4edda; color: #155724; }
+    .breadth-industry  { background: #fff3cd; color: #856404; }
+    .breadth-company   { background: #f8d7da; color: #721c24; }
+    .breadth-none      { background: #eee;    color: #888; }
+    article {
+      border-bottom: 1px solid #e0ddd8;
+      padding: 1rem 0;
+    }
+    article:last-child { border-bottom: none; }
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.35rem;
+    }
+    .priority-score {
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #888;
+    }
+    article h3 { font-size: 1rem; margin-bottom: 0.3rem; line-height: 1.4; }
+    article time { font-size: 0.78rem; color: #999; display: block; margin-bottom: 0.4rem; }
+    article p.summary { font-size: 0.88rem; color: #333; line-height: 1.6; margin-bottom: 0.4rem; }
+    article p.rationale { font-size: 0.82rem; color: #555; font-style: italic; line-height: 1.5; }
+    #news-status { font-size: 0.82rem; color: #888; margin-bottom: 1rem; }
+    .loading { color: #aaa; font-style: italic; }
+    .error   { color: #c0392b; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>mynews</h1>
+    <p id="report-updated"></p>
+  </header>
+
+  <section id="report-section">
+    <h2 class="section-title">Market Report</h2>
+    <div id="report-body" class="loading">Loading report...</div>
+  </section>
+
+  <section id="stories-section">
+    <h2 class="section-title">Stories</h2>
+    <div id="news-status"></div>
+    <div id="news-container" class="loading">Loading stories...</div>
+  </section>
+
+  <script>
+    const API_BASE = "https://api.mydomain.news";
+
+    function breadthClass(b) {
+      const map = { global: "breadth-global", national: "breadth-national",
+                    industry: "breadth-industry", company: "breadth-company",
+                    none: "breadth-none" };
+      return map[b] || "breadth-none";
+    }
+
+    async function loadReport() {
+      const el = document.getElementById("report-body");
+      try {
+        const res = await fetch(`${API_BASE}/v1/report`);
+        if (!res.ok) { el.textContent = "Report unavailable."; el.className = "error"; return; }
+        const payload = await res.json();
+        el.textContent = payload.report || "No report available.";
+        el.className = "";
+      } catch {
+        el.textContent = "Could not load report.";
+        el.className = "error";
+      }
+    }
+
+    async function loadNews() {
+      const container = document.getElementById("news-container");
+      const status    = document.getElementById("news-status");
+      try {
+        const res = await fetch(`${API_BASE}/v1/news`);
+        if (!res.ok) { container.textContent = "Stories unavailable."; container.className = "error"; return; }
+        const payload = await res.json();
+        container.innerHTML = "";
+        container.className = "";
+        status.textContent = `${payload.count} stories`;
+
+        payload.data.forEach(item => {
+          const article = document.createElement("article");
+          const bc = breadthClass(item.breadth);
+          article.innerHTML = `
+            <div class="article-meta">
+              <span class="priority-score">P${item.priority ?? "--"}</span>
+              <span class="breadth-badge ${bc}">${item.breadth ?? "unknown"}</span>
+            </div>
+            <h3>${item.title ?? ""}</h3>
+            <time>${item.published ?? ""}</time>
+            <p class="summary">${item.summary ?? ""}</p>
+            ${item.rationale ? `<p class="rationale">${item.rationale}</p>` : ""}
+          `;
+          container.appendChild(article);
+        });
+      } catch {
+        container.textContent = "Could not load stories.";
+        container.className = "error";
+      }
+    }
+
+    loadReport();
+    loadNews();
+  </script>
+
+</body>
+</html>

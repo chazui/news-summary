@@ -84,7 +84,8 @@ def combine_RSS_df(url_dict):
               for url in urls]
     concat_feed = pd.concat(frames, ignore_index=True)
     concat_feed = concat_feed.astype(str).apply(lambda x: x.str.strip())
-    final_feed = concat_feed.drop_duplicates()
+    final_feed = concat_feed.drop_duplicates(subset=['title'])
+    final_feed = final_feed[final_feed.apply(filterRecentRSSEntries, axis=1, hour_amt=48)]
     return final_feed
 
 def filterRecentRSSEntries(entry,hour_amt=1):

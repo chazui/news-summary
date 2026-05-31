@@ -1,0 +1,5 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'jobs/Dockerfile', '-t', 'us-central1-docker.pkg.dev/rexnews/cloud-run-source-deploy/news-summary-job', '.']
+images:
+  - 'us-central1-docker.pkg.dev/rexnews/cloud-run-source-deploy/news-summary-job'

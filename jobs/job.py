@@ -15,8 +15,8 @@ import readnews
 
 BUCKET_NAME = os.environ["GCS_BUCKET_NAME"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
-PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
-MODEL = "gemini-2.0-flash"
+PROMPTS_DIR = Path(__file__).parent / "prompts"
+MODEL = "models/gemini-2.5-flash"
 SUMMARY_PRIORITY_THRESHOLD = int(os.environ.get("SUMMARY_PRIORITY_THRESHOLD", 60))
 
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -35,35 +35,39 @@ def rate_entry(entry: dict, system_prompt: str) -> dict:
             response_mime_type="application/json",
         ),
     )
+    print(f"RAW RESPONSE: {response.text}")
     ratings = json.loads(response.text) #type: ignore
     return {**entry, **ratings}
 
-
 def rate_all(entries: list[dict]) -> list[dict]:
+    print(f"Rating {len(entries)} entries in one batch...")
     system_prompt = load_prompt("rate_entry")
+    response = client.models.generate_content(
+        model=MODEL,
+        contents=json.dumps(entries),
+        config=types.GenerateContentConfig(
+            system_instruction=system_prompt,
+            response_mime_type="application/json",
+        ),
+    )
+    print(f"RAW RESPONSE: {response.text[:500]}")
+    ratings = json.loads(response.text)
     rated = []
-    for entry in entries:
+    for entry, rating in zip(entries, ratings):
         try:
-            rated.append(rate_entry(entry, system_prompt))
-        except Exception as e:
-            print(f"Rating failed for '{entry.get('title', '?')}': {e}")
-            rated.append({
-                **entry,
-                "priority": 0,
-                "breadth": "none",
-                "rationale": "",
-            })
+            rated.append({**entry, **rating})
+        except Exception:
+            rated.append({**entry, "priority": 0, "breadth": "none", "rationale": ""})
     return rated
-
 
 def sort_entries(entries: list[dict]) -> list[dict]:
     return sorted(entries, key=lambda x: x.get("priority", 0), reverse=True)
 
 
-def summarize(entries: list[dict]) -> str:
-    candidates = [e for e in entries if e.get("priority", 0) >= SUMMARY_PRIORITY_THRESHOLD]
+def summarize(entries: list[dict], top_n: int = 20) -> str:
+    candidates = entries[:top_n]  # already sorted by priority descending
     if not candidates:
-        return "No stories met the priority threshold for summarization."
+        return "No stories available for summarization."
     system_prompt = load_prompt("summarize")
     response = client.models.generate_content(
         model=MODEL,
@@ -73,7 +77,6 @@ def summarize(entries: list[dict]) -> str:
         ),
     )
     return response.text #type: ignore
-
 
 def write_to_gcs(data: str, blob_name: str):
     storage_client = storage.Client()

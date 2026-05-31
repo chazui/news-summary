@@ -73,18 +73,24 @@
     #news-status { font-size: 0.82rem; color: #888; margin-bottom: 1rem; }
     .loading { color: #aaa; font-style: italic; }
     .error   { color: #c0392b; }
+    #report-body h2 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
+    #report-body h3 { font-size: 1rem; margin: 1.25rem 0 0.4rem; color: #444; }
+    #report-body h4 { font-size: 0.95rem; margin: 1rem 0 0.3rem; font-style: italic; }
+    #report-body ul { margin: 0.25rem 0 0.75rem 1.25rem; }
+    #report-body li { margin-bottom: 0.2rem; font-size: 0.88rem; }
+    #report-body p { margin: 0.5rem 0; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>mynews</h1>
+    <h1>Rex's Prioritized RSS App</h1>
     <p id="report-updated"></p>
   </header>
 
   <section id="report-section">
     <h2 class="section-title">Market Report</h2>
-    <div id="report-body" class="loading">Loading report...</div>
+    <div id="report-body" class="loading"><p>Loading report...</p></div>
   </section>
 
   <section id="stories-section">
@@ -94,13 +100,27 @@
   </section>
 
   <script>
-    const API_BASE = "https://api.mydomain.news";
-
+    const API_BASE = "https://news-summary-api-qy2otpqeaa-uc.a.run.app";
     function breadthClass(b) {
       const map = { global: "breadth-global", national: "breadth-national",
                     industry: "breadth-industry", company: "breadth-company",
                     none: "breadth-none" };
       return map[b] || "breadth-none";
+    }
+    
+    function simpleMarkdown(text) {
+      return text
+       .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+       .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+       .replace(/\*(.+?)\*/g, '<em>$1</em>')
+       .replace(/^- (.+)$/gm, '<li>$1</li>')
+       .replace(/(<li>[\s\S]+?<\/li>)(\n(?!<li>)|$)/g, '<ul>$1</ul>')
+       .replace(/\n{2,}/g, '</p><p>')
+       .replace(/\n/g, ' ')
+       .trim();
     }
 
     async function loadReport() {
@@ -109,8 +129,8 @@
         const res = await fetch(`${API_BASE}/v1/report`);
         if (!res.ok) { el.textContent = "Report unavailable."; el.className = "error"; return; }
         const payload = await res.json();
-        el.textContent = payload.report || "No report available.";
-        el.className = "";
+        el.innerHTML = simpleMarkdown(payload.report || "No report available.");
+	el.className = "";
       } catch {
         el.textContent = "Could not load report.";
         el.className = "error";

@@ -3,20 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>mynews</title>
+  <title>Rex's Economic News</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       font-family: Georgia, serif;
-      background: #f9f7f4;
+      background: #95f49e;
       color: #1a1a1a;
+      padding-top: 7rem;
+    }
+
+    /* ── Sticky navbar ── */
+    #navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: #95f49e;
+      border-bottom: 2px solid #1a1a1a;
+    }
+    #navbar-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem 0;
+    }
+    #navbar h1 { font-size: 2rem; letter-spacing: -0.5px; margin-bottom: 0.6rem; }
+    #nav-buttons {
+      display: flex;
+      gap: 0.5rem;
+      padding-bottom: 0.6rem;
+    }
+    #nav-buttons button {
+      font-family: Georgia, serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.5px;
+      background: none;
+      border: 1px solid #bbb;
+      border-radius: 3px;
+      padding: 0.25rem 0.75rem;
+      cursor: pointer;
+      color: #555;
+      transition: background 0.15s, color 0.15s;
+    }
+    #nav-buttons button:hover { background: rgba(0,0,0,0.08); }
+    #nav-buttons button.active {
+      background: #1a1a1a;
+      color: #f9f7f4;
+      border-color: #1a1a1a;
+    }
+
+    /* ── Main content ── */
+    #content {
       max-width: 860px;
       margin: 0 auto;
       padding: 2rem 1.5rem;
     }
-    header { border-bottom: 2px solid #1a1a1a; padding-bottom: 0.75rem; margin-bottom: 2rem; }
-    header h1 { font-size: 2rem; letter-spacing: -0.5px; }
-    header p { font-size: 0.85rem; color: #666; margin-top: 0.25rem; }
+
     section { margin-bottom: 2.5rem; }
     h2.section-title {
       font-size: 0.7rem;
@@ -25,6 +69,7 @@
       color: #888;
       margin-bottom: 1rem;
     }
+
     #report-body {
       background: #fff;
       border: 1px solid #ddd;
@@ -32,8 +77,14 @@
       padding: 1.25rem 1.5rem;
       font-size: 0.95rem;
       line-height: 1.7;
-      white-space: pre-wrap;
     }
+    #report-body h2 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
+    #report-body h3 { font-size: 1rem; margin: 1.25rem 0 0.4rem; color: #444; }
+    #report-body h4 { font-size: 0.95rem; margin: 1rem 0 0.3rem; font-style: italic; }
+    #report-body ul { margin: 0.25rem 0 0.75rem 1.25rem; }
+    #report-body li { margin-bottom: 0.2rem; font-size: 0.88rem; }
+    #report-body p { margin: 0.5rem 0; }
+
     .breadth-badge {
       display: inline-block;
       font-family: monospace;
@@ -45,127 +96,155 @@
       background: #eee;
       color: #555;
     }
-    .breadth-global    { background: #d1e8ff; color: #1a4a7a; }
-    .breadth-national  { background: #d4edda; color: #155724; }
-    .breadth-industry  { background: #fff3cd; color: #856404; }
-    .breadth-company   { background: #f8d7da; color: #721c24; }
-    .breadth-none      { background: #eee;    color: #888; }
-    article {
-      border-bottom: 1px solid #e0ddd8;
-      padding: 1rem 0;
-    }
+    .breadth-global   { background: #d1e8ff; color: #1a4a7a; }
+    .breadth-national { background: #d4edda; color: #155724; }
+    .breadth-industry { background: #fff3cd; color: #856404; }
+    .breadth-company  { background: #f8d7da; color: #721c24; }
+    .breadth-none     { background: #eee;    color: #888; }
+
+    article { border-bottom: 1px solid #e0ddd8; padding: 1rem 0; }
     article:last-child { border-bottom: none; }
-    .article-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.35rem;
-    }
-    .priority-score {
-      font-family: monospace;
-      font-size: 0.75rem;
-      color: #888;
-    }
+    .article-meta { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+    .priority-score { font-family: monospace; font-size: 0.75rem; color: #888; }
     article h3 { font-size: 1rem; margin-bottom: 0.3rem; line-height: 1.4; }
     article time { font-size: 0.78rem; color: #999; display: block; margin-bottom: 0.4rem; }
     article p.summary { font-size: 0.88rem; color: #333; line-height: 1.6; margin-bottom: 0.4rem; }
     article p.rationale { font-size: 0.82rem; color: #555; font-style: italic; line-height: 1.5; }
+
     #news-status { font-size: 0.82rem; color: #888; margin-bottom: 1rem; }
     .loading { color: #aaa; font-style: italic; }
     .error   { color: #c0392b; }
-    #report-body h2 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem; }
-    #report-body h3 { font-size: 1rem; margin: 1.25rem 0 0.4rem; color: #444; }
-    #report-body h4 { font-size: 0.95rem; margin: 1rem 0 0.3rem; font-style: italic; }
-    #report-body ul { margin: 0.25rem 0 0.75rem 1.25rem; }
-    #report-body li { margin-bottom: 0.2rem; font-size: 0.88rem; }
-    #report-body p { margin: 0.5rem 0; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Rex's Prioritized RSS App</h1>
-    <p id="report-updated"></p>
-  </header>
+  <div id="navbar">
+    <div id="navbar-inner">
+      <h1>Rex's Economic News</h1>
+      <div id="nav-buttons">
+        <button class="active" onclick="setView('home')">Home</button>
+        <button onclick="setView('global')">Global</button>
+        <button onclick="setView('national')">National</button>
+        <button onclick="setView('industry')">Industry</button>
+        <button onclick="setView('other')">Other</button>
+      </div>
+    </div>
+  </div>
 
-  <section id="report-section">
-    <h2 class="section-title">Market Report</h2>
-    <div id="report-body" class="loading"><p>Loading report...</p></div>
-  </section>
+  <div id="content">
+    <section id="report-section">
+      <h2 class="section-title">Market Report</h2>
+      <div id="report-body" class="loading"><p>Loading report...</p></div>
+    </section>
 
-  <section id="stories-section">
-    <h2 class="section-title">Stories</h2>
-    <div id="news-status"></div>
-    <div id="news-container" class="loading">Loading stories...</div>
-  </section>
+    <section id="stories-section">
+      <h2 class="section-title">Stories</h2>
+      <div id="news-status"></div>
+      <div id="news-container" class="loading">Loading stories...</div>
+    </section>
+  </div>
 
   <script>
     const API_BASE = "https://news-summary-api-qy2otpqeaa-uc.a.run.app";
+
+    let allStories = [];
+
+    const BREADTH_FILTER = {
+      home:     null,
+      global:   s => s.breadth === 'global',
+      national: s => s.breadth === 'national',
+      industry: s => s.breadth === 'industry' || s.breadth === 'company',
+      other:    s => !['global', 'national', 'industry', 'company'].includes(s.breadth),
+    };
+
     function breadthClass(b) {
       const map = { global: "breadth-global", national: "breadth-national",
                     industry: "breadth-industry", company: "breadth-company",
                     none: "breadth-none" };
       return map[b] || "breadth-none";
     }
-    
+
     function simpleMarkdown(text) {
       return text
-       .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
-       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-       .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-       .replace(/^- (.+)$/gm, '<li>$1</li>')
-       .replace(/(<li>[\s\S]+?<\/li>)(\n(?!<li>)|$)/g, '<ul>$1</ul>')
-       .replace(/\n{2,}/g, '</p><p>')
-       .replace(/\n/g, ' ')
-       .trim();
+        .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>[\s\S]+?<\/li>)(\n(?!<li>)|$)/g, '<ul>$1</ul>')
+        .replace(/\n{2,}/g, '</p><p>')
+        .replace(/\n/g, ' ')
+        .trim();
+    }
+
+    function setView(view) {
+      document.querySelectorAll('#nav-buttons button').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === view);
+      });
+      document.getElementById('report-section').style.display = view === 'home' ? '' : 'none';
+      renderStories(view);
+    }
+
+    function renderStories(view) {
+      const container = document.getElementById('news-container');
+      const status    = document.getElementById('news-status');
+      const filter    = BREADTH_FILTER[view];
+      const stories   = filter ? allStories.filter(filter) : allStories;
+
+      container.innerHTML = '';
+      container.className = '';
+      status.textContent  = `${stories.length} stories`;
+
+      if (stories.length === 0) {
+        container.textContent = 'No stories in this category.';
+        container.className = 'loading';
+        return;
+      }
+
+      stories.forEach(item => {
+        const article = document.createElement('article');
+        const bc = breadthClass(item.breadth);
+        article.innerHTML = `
+          <div class="article-meta">
+            <span class="priority-score">P${item.priority ?? '--'}</span>
+            <span class="breadth-badge ${bc}">${item.breadth ?? 'unknown'}</span>
+          </div>
+          <h3>${item.title ?? ''}</h3>
+          <time>${item.published ?? ''}</time>
+          <p class="summary">${item.summary ?? ''}</p>
+          ${item.rationale ? `<p class="rationale">${item.rationale}</p>` : ''}
+        `;
+        container.appendChild(article);
+      });
     }
 
     async function loadReport() {
-      const el = document.getElementById("report-body");
+      const el = document.getElementById('report-body');
       try {
         const res = await fetch(`${API_BASE}/v1/report`);
-        if (!res.ok) { el.textContent = "Report unavailable."; el.className = "error"; return; }
+        if (!res.ok) { el.textContent = 'Report unavailable.'; el.className = 'error'; return; }
         const payload = await res.json();
-        el.innerHTML = simpleMarkdown(payload.report || "No report available.");
-	el.className = "";
+        el.innerHTML = simpleMarkdown(payload.report || 'No report available.');
+        el.className = '';
       } catch {
-        el.textContent = "Could not load report.";
-        el.className = "error";
+        el.textContent = 'Could not load report.';
+        el.className = 'error';
       }
     }
 
     async function loadNews() {
-      const container = document.getElementById("news-container");
-      const status    = document.getElementById("news-status");
+      const container = document.getElementById('news-container');
       try {
         const res = await fetch(`${API_BASE}/v1/news`);
-        if (!res.ok) { container.textContent = "Stories unavailable."; container.className = "error"; return; }
+        if (!res.ok) { container.textContent = 'Stories unavailable.'; container.className = 'error'; return; }
         const payload = await res.json();
-        container.innerHTML = "";
-        container.className = "";
-        status.textContent = `${payload.count} stories`;
-
-        payload.data.forEach(item => {
-          const article = document.createElement("article");
-          const bc = breadthClass(item.breadth);
-          article.innerHTML = `
-            <div class="article-meta">
-              <span class="priority-score">P${item.priority ?? "--"}</span>
-              <span class="breadth-badge ${bc}">${item.breadth ?? "unknown"}</span>
-            </div>
-            <h3>${item.title ?? ""}</h3>
-            <time>${item.published ?? ""}</time>
-            <p class="summary">${item.summary ?? ""}</p>
-            ${item.rationale ? `<p class="rationale">${item.rationale}</p>` : ""}
-          `;
-          container.appendChild(article);
-        });
+        allStories = payload.data;
+        renderStories('home');
       } catch {
-        container.textContent = "Could not load stories.";
-        container.className = "error";
+        container.textContent = 'Could not load stories.';
+        container.className = 'error';
       }
     }
 
